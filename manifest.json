@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "YT 59s Fixer",
+  "version": "1.0",
+  "description": "Fixes the issue of YouTube videos being limited to 59 seconds by replacing the video player with an iframe to YouTube embed player.",
+  "permissions": ["activeTab"],
+  "host_permissions": ["https://www.youtube.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ]
+}
