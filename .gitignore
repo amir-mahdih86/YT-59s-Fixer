@@ -1,0 +1,21 @@
+# Provided by Chat-GPT
+
+# Ignore temporary files and directories
+*.log
+*.tmp
+*.bak
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore IDE-specific files
+.vscode/
+.idea/
+
+# Ignore node_modules if using a build system
+node_modules/
+
+# Ignore build artifacts (if you use a build process)
+dist/
+build/
