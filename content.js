@@ -46,4 +46,8 @@ function replaceYouTubePlayer() {
   }
 }
 
-replaceYouTubePlayer();
+window.addEventListener("yt-navigate-finish", () => {
+    console.log('yt-navigation-finished event called!')
+    if(window.location.href.includes('/watch'))
+        replaceYouTubePlayer();
+});
