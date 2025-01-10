@@ -31,6 +31,7 @@ function replaceYouTubePlayer(videoContainer) {
     iframe.setAttribute("allowfullscreen", "");
 
     videoContainer.appendChild(iframe);
+    document.getElementById("new_player").focus();
   } else {
     console.error("No video ID found in URL.");
   }
@@ -44,3 +45,30 @@ window.addEventListener("yt-navigate-finish", () => {
     replaceYouTubePlayer(videoContainer);
   }
 });
+
+
+/*
+The code to be injected into the page context.
+
+The reason of injecting this code to DOM instead of running it here,
+is that here we don't have access to old player methods.
+ */
+const injectedCode = `
+  player = document.getElementById('movie_player');
+  player.pauseVideo();
+  player.cancelPlayback();
+  document.getElementById("new_player").focus();
+  document.addEventListener('keyup', (event) => {
+    if (event.code === 'Space') {
+      console.log('[Injected Script] Spacebar pressed. Attempting to pause player...');
+      player.pauseVideo();
+    }
+  });
+`;
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('Injecting the code to DOM');
+  // Inject the code into the page context
+  const script = document.createElement('script');
+  script.textContent = injectedCode; // Set the code as a text node
+  (document.head || document.documentElement).appendChild(script);
+})
