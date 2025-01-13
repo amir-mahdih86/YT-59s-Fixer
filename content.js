@@ -120,11 +120,12 @@ window.addEventListener("yt-navigate-finish", () => {
   }
 
     // Inject the code into the page context
-  if (!(document.getElementById('injected_script'))) {
-    console.log('Injecting the code to DOM');
-    const script = document.createElement('script');
-    script.id = 'injected_script';
-    script.textContent = injectedCode; // Set the code as a text node
-    (document.head || document.documentElement).appendChild(script);
+  const injected_script = document.getElementById('injected_script');
+  if (injected_script) {
+    injected_script.remove()
   }
+  const script = document.createElement('script');
+  script.id = 'injected_script';
+  script.textContent = injectedCode; // Set the code as a text node
+  (document.head || document.documentElement).appendChild(script);
 });
