@@ -3,6 +3,31 @@ function getVideoContainer() {
   return document.getElementById("movie_player")
 }
 
+function waitForVideoContainer(callback) {
+  const videoContainer = getVideoContainer();
+  if (videoContainer) {
+    console.log("Video player found!");
+    callback(videoContainer);
+    return;
+  }
+
+  console.log("Waiting for video player to load...");
+  const observer = new MutationObserver(() => {
+    const videoContainer = getVideoContainer();
+    if (videoContainer) {
+      console.log("Video player loaded!");
+      observer.disconnect(); // Stop observing once the player is found
+      callback(videoContainer);
+    }
+  });
+
+  // Observe the body for changes
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
+}
+
 function removePlayer(videoContainer) {
   console.log("Removing the player...");
   videoContainer.innerHTML = "";
@@ -37,16 +62,6 @@ function replaceYouTubePlayer(videoContainer) {
   }
 }
 
-window.addEventListener("yt-navigate-finish", () => {
-  console.log("yt-navigation-finished event called!")
-  if (window.location.href.includes("/watch")) {
-    const videoContainer = getVideoContainer();
-    removePlayer(videoContainer);
-    replaceYouTubePlayer(videoContainer);
-  }
-});
-
-
 /*
 The code to be injected into the page context.
 
@@ -54,21 +69,62 @@ The reason of injecting this code to DOM instead of running it here,
 is that here we don't have access to old player methods.
  */
 const injectedCode = `
-  player = document.getElementById('movie_player');
-  player.pauseVideo();
-  player.cancelPlayback();
-  document.getElementById("new_player").focus();
-  document.addEventListener('keyup', (event) => {
-    if (event.code === 'Space') {
-      console.log('[Injected Script] Spacebar pressed. Attempting to pause player...');
-      player.pauseVideo();
+  console.log("[Injected Script] Waiting for the YouTube player to load...");
+  function waitForPlayer(callback) {
+    const player = document.getElementById('movie_player');
+    if (player) {
+      console.log("[Injected Script] Player found!");
+      callback(player);
+      return;
     }
+
+    // Wait for the player to load using MutationObserver
+    const observer = new MutationObserver(() => {
+      const player = document.getElementById('movie_player');
+      if (player) {
+        console.log("[Injected Script] Player loaded!");
+        observer.disconnect();
+        callback(player);
+      }
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+  }
+
+  waitForPlayer((player) => {
+    console.log("[Injected Script] Setting up the event listener...");
+    player.pauseVideo();
+    player.cancelPlayback();
+    document.getElementById("new_player")?.focus(); // Focus iframe if present
+    document.addEventListener('keyup', (event) => {
+      if (event.code === 'Space') {
+        console.log('[Injected Script] Spacebar pressed. Attempting to pause player...');
+        player.pauseVideo();
+      }
+    });
   });
 `;
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('Injecting the code to DOM');
-  // Inject the code into the page context
-  const script = document.createElement('script');
-  script.textContent = injectedCode; // Set the code as a text node
-  (document.head || document.documentElement).appendChild(script);
-})
+
+window.addEventListener("yt-navigate-finish", () => {
+  console.log("yt-navigation-finished event called!")
+  if (window.location.href.includes("/watch")) {
+    console.log("User is on a video watch page.");
+    waitForVideoContainer((videoContainer) => {
+      console.log("Proceeding to remove and replace the player...");
+      removePlayer(videoContainer);
+      replaceYouTubePlayer(videoContainer);
+    });
+  }
+
+    // Inject the code into the page context
+  if (!(document.getElementById('injected_script'))) {
+    console.log('Injecting the code to DOM');
+    const script = document.createElement('script');
+    script.id = 'injected_script';
+    script.textContent = injectedCode; // Set the code as a text node
+    (document.head || document.documentElement).appendChild(script);
+  }
+});
