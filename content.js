@@ -1,3 +1,5 @@
+const myEvent = new Event("new-player-loaded");
+
 function getVideoContainer() {
   console.log("Finding video player...");
   return document.getElementById("movie_player")
@@ -58,7 +60,7 @@ function replaceYouTubePlayer(videoContainer) {
     iframe.setAttribute("allowfullscreen", "");
 
     videoContainer.appendChild(iframe);
-    document.getElementById("new_player").focus();
+    document.dispatchEvent(myEvent);
   } else {
     console.error("No video ID found in URL.");
   }
@@ -100,34 +102,55 @@ const injectedCode = `
     console.log("[Injected Script] Setting up the event listener...");
     player.pauseVideo();
     player.cancelPlayback();
-    document.getElementById("new_player")?.focus(); // Focus iframe if present
     document.addEventListener('keyup', (event) => {
       if (event.code === 'Space') {
-        console.log('[Injected Script] Spacebar pressed. Attempting to pause player...');
+        console.log('[Injected Script][keyup event] Spacebar pressed. Attempting to pause player...');
+        player.pauseVideo();
+      }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.code === 'Space') {
+        console.log('[Injected Script][keydown event] Spacebar pressed. Attempting to pause player...');
+        player.pauseVideo();
+      }
+    });
+    document.addEventListener('keypress', (event) => {
+      if (event.code === 'Space') {
+        console.log('[Injected Script][keypress event] Spacebar pressed. Attempting to pause player...');
         player.pauseVideo();
       }
     });
   });
+  
+  document.addEventListener('new-player-loaded', () => {
+    console.log('inside this event');
+    document.getElementById('movie_player').pauseVideo();
+    document.getElementById('new_player').addEventListener('load', () => {
+      document.getElementById("new_player").contentWindow.document.querySelector('.video-stream').focus();
+    }, {once: true})
+  }, {once: true});
 `;
 
 window.addEventListener("yt-navigate-finish", () => {
   console.log("yt-navigation-finished event called!")
   if (window.location.href.includes("/watch")) {
     console.log("User is on a video watch page.");
+
+    // Inject the code into the page context
+    const injected_script = document.getElementById('injected_script');
+    if (injected_script) {
+      injected_script.remove()
+    }
+    const script = document.createElement('script');
+    script.id = 'injected_script';
+    script.textContent = injectedCode; // Set the code as a text node
+    (document.head || document.documentElement).appendChild(script);
+
+    // Replace video player
     waitForVideoContainer((videoContainer) => {
       console.log("Proceeding to remove and replace the player...");
       removePlayer(videoContainer);
       replaceYouTubePlayer(videoContainer);
     });
   }
-
-    // Inject the code into the page context
-  const injected_script = document.getElementById('injected_script');
-  if (injected_script) {
-    injected_script.remove()
-  }
-  const script = document.createElement('script');
-  script.id = 'injected_script';
-  script.textContent = injectedCode; // Set the code as a text node
-  (document.head || document.documentElement).appendChild(script);
 });
