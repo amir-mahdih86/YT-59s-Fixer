@@ -46,6 +46,8 @@ function replaceYouTubePlayer(videoContainer) {
     iframe.width = "100%";
     iframe.height = "100%";
     iframe.style.border = "none";
+    iframe.style.position = "relative";
+    iframe.style.zIndex = "9999";
     iframe.title = "YouTube video player";
     iframe.setAttribute("frameborder", "0");
     iframe.setAttribute(
